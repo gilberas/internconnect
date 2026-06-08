@@ -68,7 +68,24 @@ Route::middleware(['auth', 'verified', 'role:company'])
             if (! $profile || empty($profile->company_name)) {
                 return redirect()->route('company.setup');
             }
-            return view('company.dashboard', compact('profile'));
+            $internshipIds = $profile->internships()->pluck('id');
+            $stats = [
+                'active'     => $profile->internships()->where('status', 'approved')->count(),
+                'pending'    => $profile->internships()->where('status', 'pending')->count(),
+                'applicants' => \App\Models\Application::whereIn('internship_id', $internshipIds)->count(),
+                'interviews' => \App\Models\Interview::whereHas('application',
+                                    fn ($q) => $q->whereIn('internship_id', $internshipIds))
+                                    ->where('status', 'scheduled')->count(),
+            ];
+            $recentApplications = \App\Models\Application::whereIn('internship_id', $internshipIds)
+                ->with(['internship', 'student.user'])
+                ->latest()->take(6)->get();
+            $activeInternships = $profile->internships()
+                ->withCount('applications')
+                ->where('status', 'approved')
+                ->latest()->take(5)->get();
+            return view('company.dashboard',
+                compact('profile', 'stats', 'recentApplications', 'activeInternships'));
         })->name('dashboard');
 
         Route::get('/setup',  [\App\Http\Controllers\Company\ProfileController::class, 'setup'])->name('setup');
