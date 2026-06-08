@@ -3,13 +3,12 @@
 namespace App\Http\Controllers\Student;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Student\ApplyRequest;
 use App\Models\Application;
 use App\Models\ApplicationCertificate;
 use App\Models\Internship;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class ApplicationController extends Controller
@@ -33,25 +32,30 @@ class ApplicationController extends Controller
         return view('student.applications.show', compact('application'));
     }
 
-    public function store(ApplyRequest $request, Internship $internship): RedirectResponse
+    public function store(Request $request, Internship $internship): RedirectResponse
     {
+        $request->validate([
+            'cv'              => ['nullable', 'file', 'mimes:pdf', 'max:5120'],
+            'cover_letter'    => ['nullable', 'file', 'mimes:pdf,doc,docx', 'max:5120'],
+            'certificates'    => ['nullable', 'array', 'max:5'],
+            'certificates.*'  => ['file', 'mimes:pdf,jpg,jpeg,png', 'max:2048'],
+        ]);
+
         $profile = auth()->user()->studentProfile;
 
-        abort_if(! $internship->isOpen(), 403, 'This internship is no longer accepting applications.');
+        abort_if(! $internship->isOpen(), 403, 'This internship is not accepting applications.');
 
-        $already = $profile->applications()->where('internship_id', $internship->id)->exists();
-        if ($already) {
+        if ($profile->applications()->where('internship_id', $internship->id)->exists()) {
             return back()->with('error', 'You have already applied to this internship.');
         }
 
         DB::transaction(function () use ($request, $internship, $profile) {
-            // Use uploaded CV or fall back to profile CV
-            $cvPath = $request->hasFile('cv_path')
-                ? $request->file('cv_path')->store("applications/{$profile->id}/cvs", 'private')
+            $cvPath    = $request->hasFile('cv')
+                ? $request->file('cv')->store("applications/{$profile->id}/cvs", 'private')
                 : $profile->cv_path;
 
-            $coverPath = $request->hasFile('cover_letter_path')
-                ? $request->file('cover_letter_path')->store("applications/{$profile->id}/covers", 'private')
+            $coverPath = $request->hasFile('cover_letter')
+                ? $request->file('cover_letter')->store("applications/{$profile->id}/covers", 'private')
                 : null;
 
             $application = Application::create([
@@ -62,21 +66,20 @@ class ApplicationController extends Controller
                 'status'            => 'submitted',
             ]);
 
-            // Upload certificates
             if ($request->hasFile('certificates')) {
                 foreach ($request->file('certificates') as $file) {
                     $path = $file->store("applications/{$profile->id}/certs", 'private');
                     ApplicationCertificate::create([
-                        'application_id'   => $application->id,
-                        'original_filename'=> $file->getClientOriginalName(),
-                        'file_path'        => $path,
-                        'mime_type'        => $file->getMimeType(),
+                        'application_id'    => $application->id,
+                        'original_filename' => $file->getClientOriginalName(),
+                        'file_path'         => $path,
+                        'mime_type'         => $file->getMimeType(),
                     ]);
                 }
             }
         });
 
         return redirect()->route('student.applications.index')
-            ->with('status', 'Application submitted successfully! We will notify you of any updates.');
+            ->with('status', 'Application submitted! You will be notified of updates.');
     }
 }

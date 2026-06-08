@@ -21,6 +21,15 @@
     <div class="py-8">
         <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
 
+            @if (session('error'))
+                <div class="mb-5 flex items-center gap-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4">
+                    <svg class="w-5 h-5 text-red-500 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                    </svg>
+                    <p class="text-sm text-red-700 dark:text-red-300 font-medium">{{ session('error') }}</p>
+                </div>
+            @endif
+
             {{-- Title + Meta ────────────────────────────────────────────────────────── --}}
             <div class="mb-6">
                 <div class="flex flex-wrap items-center gap-2 mb-1">
@@ -196,8 +205,127 @@
                         </div>
                     </div>
 
-                    {{-- Apply button --}}
-                    <div class="space-y-3">
+                    {{-- Apply + Save section --}}
+                    <div x-data="{ applyOpen: {{ $errors->hasAny(['cv','cover_letter','certificates']) ? 'true' : 'false' }} }"
+                         class="space-y-3">
+
+                        {{-- Apply Modal --}}
+                        <div x-show="applyOpen"
+                             x-transition:enter="transition ease-out duration-200"
+                             x-transition:enter-start="opacity-0"
+                             x-transition:enter-end="opacity-100"
+                             x-transition:leave="transition ease-in duration-150"
+                             x-transition:leave-start="opacity-100"
+                             x-transition:leave-end="opacity-0"
+                             class="fixed inset-0 bg-black/60 z-50 overflow-y-auto"
+                             @click.self="applyOpen = false">
+                            <div class="min-h-screen px-4 py-10 flex items-start justify-center">
+                                <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-lg"
+                                     x-transition:enter="transition ease-out duration-200"
+                                     x-transition:enter-start="opacity-0 scale-95"
+                                     x-transition:enter-end="opacity-100 scale-100"
+                                     @click.stop>
+
+                                    {{-- Modal header --}}
+                                    <div class="flex items-start justify-between p-6 border-b border-gray-100 dark:border-gray-800">
+                                        <div>
+                                            <h3 class="text-base font-semibold text-gray-900 dark:text-white">Apply for Internship</h3>
+                                            <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5 line-clamp-1">{{ $internship->title }}</p>
+                                        </div>
+                                        <button type="button" @click="applyOpen = false"
+                                                class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors ml-4 mt-0.5">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                                            </svg>
+                                        </button>
+                                    </div>
+
+                                    {{-- Modal form --}}
+                                    <form method="POST"
+                                          action="{{ route('student.applications.store', $internship) }}"
+                                          enctype="multipart/form-data"
+                                          class="p-6 space-y-5">
+                                        @csrf
+
+                                        {{-- CV section --}}
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                                                Curriculum Vitae (CV)
+                                            </label>
+                                            @if ($profile?->hasCv())
+                                                <div class="flex items-center gap-2.5 p-3 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-700 rounded-xl mb-2">
+                                                    <svg class="w-4 h-4 text-emerald-500 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                                    </svg>
+                                                    <p class="text-xs text-emerald-700 dark:text-emerald-300">
+                                                        Your profile CV will be used. Upload below to override.
+                                                    </p>
+                                                </div>
+                                            @endif
+                                            <input type="file" name="cv" accept=".pdf"
+                                                   class="block w-full text-sm text-gray-500 dark:text-gray-400
+                                                          file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0
+                                                          file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700
+                                                          hover:file:bg-blue-100 dark:file:bg-blue-900/30 dark:file:text-blue-300">
+                                            <p class="text-xs text-gray-400 mt-1">PDF only · max 5 MB</p>
+                                            @error('cv')
+                                                <p class="text-xs text-red-600 dark:text-red-400 mt-1">{{ $message }}</p>
+                                            @enderror
+                                        </div>
+
+                                        {{-- Cover Letter --}}
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                                                Cover Letter <span class="text-gray-400 font-normal">(optional)</span>
+                                            </label>
+                                            <input type="file" name="cover_letter" accept=".pdf,.doc,.docx"
+                                                   class="block w-full text-sm text-gray-500 dark:text-gray-400
+                                                          file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0
+                                                          file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700
+                                                          hover:file:bg-blue-100 dark:file:bg-blue-900/30 dark:file:text-blue-300">
+                                            <p class="text-xs text-gray-400 mt-1">PDF, DOC, DOCX · max 5 MB</p>
+                                            @error('cover_letter')
+                                                <p class="text-xs text-red-600 dark:text-red-400 mt-1">{{ $message }}</p>
+                                            @enderror
+                                        </div>
+
+                                        {{-- Certificates --}}
+                                        <div>
+                                            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                                                Supporting Certificates <span class="text-gray-400 font-normal">(optional)</span>
+                                            </label>
+                                            <input type="file" name="certificates[]"
+                                                   accept=".pdf,.jpg,.jpeg,.png" multiple
+                                                   class="block w-full text-sm text-gray-500 dark:text-gray-400
+                                                          file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0
+                                                          file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700
+                                                          hover:file:bg-blue-100 dark:file:bg-blue-900/30 dark:file:text-blue-300">
+                                            <p class="text-xs text-gray-400 mt-1">Max 5 files · 2 MB each · PDF, JPG, PNG</p>
+                                            @error('certificates')
+                                                <p class="text-xs text-red-600 dark:text-red-400 mt-1">{{ $message }}</p>
+                                            @enderror
+                                            @error('certificates.*')
+                                                <p class="text-xs text-red-600 dark:text-red-400 mt-1">{{ $message }}</p>
+                                            @enderror
+                                        </div>
+
+                                        {{-- Actions --}}
+                                        <div class="flex gap-3 pt-1">
+                                            <button type="button" @click="applyOpen = false"
+                                                    class="flex-1 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                                                Cancel
+                                            </button>
+                                            <button type="submit"
+                                                    class="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold transition-colors">
+                                                Submit Application
+                                            </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {{-- /Modal --}}
+
                         @if (! $profile || ! $profile->hasCv())
                             <div class="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-2xl p-4">
                                 <p class="text-sm font-medium text-amber-800 dark:text-amber-300 mb-2">Upload your CV first</p>
@@ -226,14 +354,10 @@
                                 <p class="text-xs text-gray-400 mt-0.5">This internship is no longer accepting applications.</p>
                             </div>
                         @else
-                            <form method="POST" action="{{ route('student.applications.store', $internship) }}"
-                                  enctype="multipart/form-data">
-                                @csrf
-                                <button type="submit"
-                                        class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-2xl text-sm transition-colors">
-                                    Apply Now
-                                </button>
-                            </form>
+                            <button type="button" @click="applyOpen = true"
+                                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-2xl text-sm transition-colors">
+                                Apply Now
+                            </button>
                         @endif
 
                         {{-- Save toggle --}}
