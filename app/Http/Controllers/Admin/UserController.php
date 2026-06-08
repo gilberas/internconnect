@@ -63,7 +63,7 @@ class UserController extends Controller
 
         ActivityLog::record('suspend_user', auth()->user(), $user);
 
-        return back()->with('status', "User '{$user->name}' has been suspended.");
+        return back()->with('status', "User '{$user->name}' suspended.");
     }
 
     public function reactivate(User $user): RedirectResponse

@@ -1,6 +1,9 @@
 <x-app-layout>
     <x-slot name="header">
-        <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Admin Dashboard</h2>
+        <div class="flex items-center justify-between">
+            <h2 class="text-lg font-semibold text-gray-900 dark:text-white">Admin Dashboard</h2>
+            <p class="text-sm text-gray-500 dark:text-gray-400">{{ now()->format('l, d F Y') }}</p>
+        </div>
     </x-slot>
 
     <div class="py-8">

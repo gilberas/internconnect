@@ -12,7 +12,7 @@ class CategoryController extends Controller
 {
     public function index(): View
     {
-        $categories = InternshipCategory::withCount('internships')->orderBy('sort_order')->get();
+        $categories = InternshipCategory::withCount('internships')->orderBy('sort_order')->orderBy('name')->get();
         return view('admin.categories.index', compact('categories'));
     }
 
