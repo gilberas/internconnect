@@ -3,6 +3,12 @@
     Phase 2 — Authentication (Weeks 3–4)
 --}}
 <x-guest-layout>
+    @if (session('status') && session('status') !== 'verification-link-sent')
+    <div class="mb-5 p-3 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl text-sm text-emerald-700 dark:text-emerald-300 text-center">
+        ✓ {{ session('status') }}
+    </div>
+    @endif
+
     <div class="flex flex-col items-center text-center mb-6">
         <div class="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mb-4">
             <svg class="w-8 h-8 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">

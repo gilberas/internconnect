@@ -68,6 +68,8 @@ class RegisteredUserController extends Controller
         event(new Registered($user));
         Auth::login($user);
 
-        return redirect()->route($user->dashboardRoute());
+        session()->flash('status', 'Account created successfully! Please verify your email.');
+
+        return redirect()->route('verification.notice');
     }
 }

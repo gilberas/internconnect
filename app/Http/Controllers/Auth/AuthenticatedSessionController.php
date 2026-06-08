@@ -50,6 +50,8 @@ class AuthenticatedSessionController extends Controller
                 ->withErrors(['email' => 'Account suspended: ' . $user->suspended_reason]);
         }
 
+        session()->flash('status', 'Welcome back, ' . $user->name . '!');
+
         return redirect()->intended(
             route($user->dashboardRoute(), absolute: false)
         );
