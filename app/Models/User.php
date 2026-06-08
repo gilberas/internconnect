@@ -31,9 +31,23 @@ class User extends Authenticatable
         ];
     }
 
+    public function isStudent(): bool  { return $this->account_type === 'student'; }
+    public function isCompany(): bool  { return $this->account_type === 'company'; }
+    public function isAdmin(): bool    { return $this->account_type === 'admin'; }
+
     public function isSuspended(): bool
     {
         return $this->status === 'suspended';
+    }
+
+    public function studentProfile()
+    {
+        return $this->hasOne(StudentProfile::class);
+    }
+
+    public function companyProfile()
+    {
+        return $this->hasOne(CompanyProfile::class);
     }
 
     public function dashboardRoute(): string
