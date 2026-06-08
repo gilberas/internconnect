@@ -138,7 +138,12 @@ Route::middleware(['auth', 'verified', 'role:admin'])
 
 // ── Shared profile + notifications ───────────────────────────────────────────
 Route::middleware('auth')->group(function () {
-    Route::get('/profile',    [\App\Http\Controllers\ProfileController::class, 'edit'])->name('profile.edit');
+    Route::get('/profile', function () {
+        $user = auth()->user();
+        if ($user->hasRole('student'))  return redirect()->route('student.profile.edit');
+        if ($user->hasRole('company'))  return redirect()->route('company.profile.edit');
+        return redirect()->route('admin.dashboard');
+    })->name('profile.edit');
     Route::patch('/profile',  [\App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [\App\Http\Controllers\ProfileController::class, 'destroy'])->name('profile.destroy');
 

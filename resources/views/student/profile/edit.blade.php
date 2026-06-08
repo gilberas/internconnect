@@ -6,8 +6,8 @@
     <div class="py-8">
         <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
 
-            {{-- Flash message --}}
-            @if (session('status'))
+            {{-- Flash message (for student profile updates only, not account settings) --}}
+            @if (session('status') && ! in_array(session('status'), ['profile-updated', 'password-updated']))
                 <div class="flex items-center gap-3 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl p-4">
                     <svg class="w-5 h-5 text-emerald-500 shrink-0" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
@@ -266,6 +266,124 @@
                         </button>
                     </form>
                     <x-input-error :messages="$errors->get('cv')" class="mt-2"/>
+                </div>
+            </div>
+
+            {{-- ─── Account Settings ────────────────────────────────────────────────────── --}}
+            <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+                    <h3 class="font-semibold text-gray-900 dark:text-white">Account Settings</h3>
+                    <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Manage your login email, display name, and password.</p>
+                </div>
+
+                {{-- Login Information --}}
+                <div class="p-6 border-b border-gray-100 dark:border-gray-800">
+                    <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">Login Information</h4>
+
+                    @if (session('status') === 'profile-updated')
+                        <div class="flex items-center gap-3 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl p-3 mb-4">
+                            <svg class="w-4 h-4 text-emerald-500 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                            </svg>
+                            <p class="text-sm text-emerald-700 dark:text-emerald-300 font-medium">Login information updated successfully.</p>
+                        </div>
+                    @endif
+
+                    <form method="POST" action="{{ route('profile.update') }}" class="space-y-4">
+                        @csrf
+                        @method('PATCH')
+
+                        <div>
+                            <label for="name" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                                Display Name
+                            </label>
+                            <input type="text" id="name" name="name"
+                                   value="{{ old('name', auth()->user()->name) }}"
+                                   required
+                                   class="w-full rounded-xl border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500">
+                            <x-input-error :messages="$errors->get('name')" class="mt-1.5"/>
+                        </div>
+
+                        <div>
+                            <label for="email" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                                Email Address
+                            </label>
+                            <input type="email" id="email" name="email"
+                                   value="{{ old('email', auth()->user()->email) }}"
+                                   required autocomplete="username"
+                                   class="w-full rounded-xl border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500">
+                            <x-input-error :messages="$errors->get('email')" class="mt-1.5"/>
+                            @if (auth()->user()->email_verified_at === null)
+                                <p class="mt-1.5 text-xs text-amber-600 dark:text-amber-400">
+                                    Your email is not verified.
+                                    <a href="{{ route('verification.notice') }}" class="underline">Resend verification</a>
+                                </p>
+                            @endif
+                        </div>
+
+                        <div class="flex justify-end">
+                            <button type="submit"
+                                    class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl text-sm font-semibold transition-colors">
+                                Update Info
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                {{-- Change Password --}}
+                <div class="p-6">
+                    <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-4">Change Password</h4>
+
+                    @if (session('status') === 'password-updated')
+                        <div class="flex items-center gap-3 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl p-3 mb-4">
+                            <svg class="w-4 h-4 text-emerald-500 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                            </svg>
+                            <p class="text-sm text-emerald-700 dark:text-emerald-300 font-medium">Password changed successfully.</p>
+                        </div>
+                    @endif
+
+                    <form method="POST" action="{{ route('password.update') }}" class="space-y-4">
+                        @csrf
+                        @method('PUT')
+
+                        <div>
+                            <label for="current_password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                                Current Password
+                            </label>
+                            <input type="password" id="current_password" name="current_password"
+                                   required autocomplete="current-password"
+                                   class="w-full rounded-xl border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500">
+                            <x-input-error :messages="$errors->updatePassword->get('current_password')" class="mt-1.5"/>
+                        </div>
+
+                        <div>
+                            <label for="new_password" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                                New Password
+                            </label>
+                            <input type="password" id="new_password" name="password"
+                                   required autocomplete="new-password"
+                                   class="w-full rounded-xl border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500">
+                            <x-input-error :messages="$errors->updatePassword->get('password')" class="mt-1.5"/>
+                        </div>
+
+                        <div>
+                            <label for="password_confirmation" class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                                Confirm New Password
+                            </label>
+                            <input type="password" id="password_confirmation" name="password_confirmation"
+                                   required autocomplete="new-password"
+                                   class="w-full rounded-xl border-gray-300 dark:border-gray-700 dark:bg-gray-800 dark:text-white shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500">
+                            <x-input-error :messages="$errors->updatePassword->get('password_confirmation')" class="mt-1.5"/>
+                        </div>
+
+                        <div class="flex justify-end">
+                            <button type="submit"
+                                    class="bg-gray-800 hover:bg-gray-900 dark:bg-gray-700 dark:hover:bg-gray-600 text-white px-6 py-2.5 rounded-xl text-sm font-semibold transition-colors">
+                                Change Password
+                            </button>
+                        </div>
+                    </form>
                 </div>
             </div>
 

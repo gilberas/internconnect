@@ -135,9 +135,19 @@
                     </x-slot>
 
                     <x-slot name="content">
-                        <x-dropdown-link :href="route('profile.edit')">
+                        @hasrole('student')
+                        <x-dropdown-link :href="route('student.profile.edit')">
                             {{ __('Profile') }}
                         </x-dropdown-link>
+                        @elsehasrole('company')
+                        <x-dropdown-link :href="route('company.profile.edit')">
+                            {{ __('Profile') }}
+                        </x-dropdown-link>
+                        @else
+                        <x-dropdown-link :href="route('admin.dashboard')">
+                            {{ __('Dashboard') }}
+                        </x-dropdown-link>
+                        @endrole
 
                         <x-dropdown-link :href="route('notifications.index')">
                             {{ __('Notifications') }}
@@ -198,9 +208,19 @@
             </div>
 
             <div class="mt-3 space-y-1">
-                <x-responsive-nav-link :href="route('profile.edit')">
+                @hasrole('student')
+                <x-responsive-nav-link :href="route('student.profile.edit')">
                     {{ __('Profile') }}
                 </x-responsive-nav-link>
+                @elsehasrole('company')
+                <x-responsive-nav-link :href="route('company.profile.edit')">
+                    {{ __('Profile') }}
+                </x-responsive-nav-link>
+                @else
+                <x-responsive-nav-link :href="route('admin.dashboard')">
+                    {{ __('Dashboard') }}
+                </x-responsive-nav-link>
+                @endrole
 
                 <x-responsive-nav-link :href="route('notifications.index')">
                     {{ __('Notifications') }}
