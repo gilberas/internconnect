@@ -13,7 +13,7 @@ class InternshipController extends Controller
 {
     public function index(Request $request): View
     {
-        $query = Internship::with(['company', 'category'])->latest();
+        $query = Internship::with(['company', 'category'])->withCount('applications')->latest();
 
         if ($request->filled('status')) {
             $query->where('status', $request->status);
@@ -25,7 +25,15 @@ class InternshipController extends Controller
 
         $internships = $query->paginate(15)->withQueryString();
 
-        return view('admin.internships.index', compact('internships'));
+        $counts = [
+            'total'    => Internship::count(),
+            'pending'  => Internship::where('status', 'pending')->count(),
+            'approved' => Internship::where('status', 'approved')->count(),
+            'rejected' => Internship::where('status', 'rejected')->count(),
+            'closed'   => Internship::where('status', 'closed')->count(),
+        ];
+
+        return view('admin.internships.index', compact('internships', 'counts'));
     }
 
     public function show(Internship $internship): View

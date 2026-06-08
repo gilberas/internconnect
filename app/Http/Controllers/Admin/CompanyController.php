@@ -25,7 +25,14 @@ class CompanyController extends Controller
 
         $companies = $query->paginate(15)->withQueryString();
 
-        return view('admin.companies.index', compact('companies'));
+        $counts = [
+            'total'    => CompanyProfile::count(),
+            'pending'  => CompanyProfile::where('verification_status', 'pending')->count(),
+            'verified' => CompanyProfile::where('verification_status', 'verified')->count(),
+            'rejected' => CompanyProfile::where('verification_status', 'rejected')->count(),
+        ];
+
+        return view('admin.companies.index', compact('companies', 'counts'));
     }
 
     public function show(CompanyProfile $company): View
@@ -45,7 +52,7 @@ class CompanyController extends Controller
 
         ActivityLog::record('verify_company', auth()->user(), $company);
 
-        return back()->with('status', "Company '{$company->company_name}' has been verified.");
+        return back()->with('status', "Company '{$company->company_name}' verified successfully.");
     }
 
     public function reject(CompanyProfile $company, Request $request): RedirectResponse
@@ -72,6 +79,6 @@ class CompanyController extends Controller
 
         ActivityLog::record('revoke_company_verification', auth()->user(), $company);
 
-        return back()->with('status', "Company verification revoked. Active internships closed.");
+        return back()->with('status', 'Verification revoked. Active internships closed.');
     }
 }
