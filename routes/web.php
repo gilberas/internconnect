@@ -13,7 +13,35 @@ Route::get('/dashboard', function () {
 // ── Student ───────────────────────────────────────────────────────────────────
 Route::middleware(['auth', 'verified', 'role:student'])
     ->prefix('student')->name('student.')->group(function () {
-        Route::get('/dashboard', fn () => view('student.dashboard'))->name('dashboard');
+        Route::get('/dashboard', function () {
+            $profile = auth()->user()->studentProfile;
+
+            if (! $profile || empty($profile->university)) {
+                return redirect()->route('student.profile.setup');
+            }
+
+            $stats = [
+                'available'    => \App\Models\Internship::where('status', 'approved')
+                                    ->where('deadline', '>=', now()->toDateString())->count(),
+                'applications' => $profile->applications()->count(),
+                'saved'        => $profile->savedInternships()->count(),
+                'interviews'   => $profile->applications()
+                                    ->where('status', 'interview_scheduled')->count(),
+            ];
+
+            $recentApplications = $profile->applications()
+                ->with(['internship.company', 'interview'])
+                ->latest()->take(5)->get();
+
+            $recommended = \App\Models\Internship::with(['company', 'category'])
+                ->where('status', 'approved')
+                ->where('deadline', '>=', now()->toDateString())
+                ->latest()->take(3)->get();
+
+            return view('student.dashboard', compact(
+                'profile', 'stats', 'recentApplications', 'recommended'
+            ));
+        })->name('dashboard');
 
         Route::get('/profile/setup',  [\App\Http\Controllers\Student\ProfileController::class, 'setup'])->name('profile.setup');
         Route::get('/profile',        [\App\Http\Controllers\Student\ProfileController::class, 'edit'])->name('profile.edit');
