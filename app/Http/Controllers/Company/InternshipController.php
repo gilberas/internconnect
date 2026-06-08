@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Company;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Company\StoreInternshipRequest;
 use App\Models\Internship;
 use App\Models\InternshipCategory;
 use Illuminate\Http\RedirectResponse;
@@ -17,13 +16,39 @@ class InternshipController extends Controller
         return auth()->user()->companyProfile;
     }
 
-    public function index(): View
+    private function validationRules(): array
     {
-        $internships = $this->companyProfile()
-            ->internships()
-            ->with('category')
-            ->latest()
-            ->paginate(10);
+        return [
+            'title'            => ['required', 'string', 'max:255'],
+            'category_id'      => ['required', 'exists:internship_categories,id'],
+            'description'      => ['required', 'string', 'min:50'],
+            'requirements'     => ['required', 'string'],
+            'responsibilities' => ['required', 'string'],
+            'skills_required'  => ['nullable', 'string'],
+            'positions'        => ['required', 'integer', 'min:1', 'max:100'],
+            'location'         => ['required', 'string', 'max:255'],
+            'duration'         => ['required', 'string', 'max:100'],
+            'internship_type'  => ['required', 'in:full_time,part_time,remote'],
+            'deadline'         => ['required', 'date', 'after:today'],
+        ];
+    }
+
+    private function processSkills(Request $request): array
+    {
+        return array_values(array_filter(
+            array_map('trim', explode(',', $request->skills_required ?? ''))
+        ));
+    }
+
+    public function index(Request $request): View
+    {
+        $query = $this->companyProfile()->internships()->with('category')->latest();
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        $internships = $query->paginate(10)->withQueryString();
 
         return view('company.internships.index', compact('internships'));
     }
@@ -33,15 +58,16 @@ class InternshipController extends Controller
         abort_if(! $this->companyProfile()?->isVerified(), 403,
             'Your company must be verified before posting internships.');
 
-        $categories = InternshipCategory::active()->get();
+        $categories = InternshipCategory::where('is_active', true)->orderBy('name')->get();
         return view('company.internships.create', compact('categories'));
     }
 
-    public function store(StoreInternshipRequest $request): RedirectResponse
+    public function store(Request $request): RedirectResponse
     {
-        $data = $request->validated();
-        $data['company_id'] = $this->companyProfile()->id;
-        $data['status']     = 'pending';
+        $data = $request->validate($this->validationRules());
+        $data['skills_required'] = $this->processSkills($request);
+        $data['company_id']      = $this->companyProfile()->id;
+        $data['status']          = 'pending';
 
         Internship::create($data);
 
@@ -62,16 +88,21 @@ class InternshipController extends Controller
         abort_if($internship->company_id !== $this->companyProfile()->id, 403);
         abort_if(! $internship->isEditable(), 403, 'Only pending or rejected internships can be edited.');
 
-        $categories = InternshipCategory::active()->get();
+        $categories = InternshipCategory::where('is_active', true)->orderBy('name')->get();
         return view('company.internships.edit', compact('internship', 'categories'));
     }
 
-    public function update(StoreInternshipRequest $request, Internship $internship): RedirectResponse
+    public function update(Request $request, Internship $internship): RedirectResponse
     {
         abort_if($internship->company_id !== $this->companyProfile()->id, 403);
-        abort_if(! $internship->isEditable(), 403);
+        abort_if(! $internship->isEditable(), 403, 'Only pending or rejected internships can be edited.');
 
-        $internship->update($request->validated() + ['status' => 'pending']);
+        $data = $request->validate($this->validationRules());
+        $data['skills_required']  = $this->processSkills($request);
+        $data['status']           = 'pending';
+        $data['rejection_reason'] = null;
+
+        $internship->update($data);
 
         return redirect()->route('company.internships.index')
             ->with('status', 'Internship updated and resubmitted for review.');
@@ -80,6 +111,11 @@ class InternshipController extends Controller
     public function destroy(Internship $internship): RedirectResponse
     {
         abort_if($internship->company_id !== $this->companyProfile()->id, 403);
+        abort_if(
+            ! in_array($internship->status, ['pending', 'rejected']),
+            403, 'Only pending or rejected internships can be deleted.'
+        );
+
         $internship->delete();
 
         return redirect()->route('company.internships.index')
@@ -91,6 +127,6 @@ class InternshipController extends Controller
         abort_if($internship->company_id !== $this->companyProfile()->id, 403);
         $internship->update(['status' => 'closed']);
 
-        return back()->with('status', 'Internship closed. Existing applicants have been notified.');
+        return back()->with('status', 'Internship closed.');
     }
 }
