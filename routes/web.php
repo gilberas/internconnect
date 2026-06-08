@@ -136,11 +136,15 @@ Route::middleware(['auth', 'verified', 'role:admin'])
         Route::get('/activity', [\App\Http\Controllers\Admin\ActivityLogController::class, 'index'])->name('activity.index');
     });
 
-// ── Shared profile ────────────────────────────────────────────────────────────
+// ── Shared profile + notifications ───────────────────────────────────────────
 Route::middleware('auth')->group(function () {
     Route::get('/profile',    [\App\Http\Controllers\ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile',  [\App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [\App\Http\Controllers\ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    Route::get('/notifications',              [\App\Http\Controllers\NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/{id}/read',   [\App\Http\Controllers\NotificationController::class, 'markRead'])->name('notifications.read');
+    Route::post('/notifications/read-all',    [\App\Http\Controllers\NotificationController::class, 'markAllRead'])->name('notifications.read-all');
 });
 
 require __DIR__.'/auth.php';
