@@ -63,10 +63,17 @@ Route::middleware(['auth', 'verified', 'role:student'])
 // ── Company ───────────────────────────────────────────────────────────────────
 Route::middleware(['auth', 'verified', 'role:company'])
     ->prefix('company')->name('company.')->group(function () {
-        Route::get('/dashboard', fn () => view('company.dashboard'))->name('dashboard');
+        Route::get('/dashboard', function () {
+            $profile = auth()->user()->companyProfile;
+            if (! $profile || empty($profile->company_name)) {
+                return redirect()->route('company.setup');
+            }
+            return view('company.dashboard', compact('profile'));
+        })->name('dashboard');
 
         Route::get('/setup',  [\App\Http\Controllers\Company\ProfileController::class, 'setup'])->name('setup');
         Route::post('/setup', [\App\Http\Controllers\Company\ProfileController::class, 'storeSetup'])->name('setup.store');
+        Route::get('/documents/{document}/download', [\App\Http\Controllers\Company\ProfileController::class, 'downloadDocument'])->name('documents.download');
         Route::get('/profile',  [\App\Http\Controllers\Company\ProfileController::class, 'edit'])->name('profile.edit');
         Route::put('/profile',  [\App\Http\Controllers\Company\ProfileController::class, 'update'])->name('profile.update');
 
