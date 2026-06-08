@@ -42,8 +42,8 @@ class InterviewController extends Controller
             'interview_date' => ['required', 'date', 'after:today'],
             'interview_time' => ['required', 'date_format:H:i'],
             'interview_type' => ['required', 'in:physical,online,phone'],
-            'venue'          => ['nullable', 'string', 'max:255'],
-            'meeting_link'   => ['nullable', 'url', 'max:500'],
+            'venue'          => ['required_if:interview_type,physical', 'nullable', 'string', 'max:255'],
+            'meeting_link'   => ['required_if:interview_type,online', 'nullable', 'url', 'max:500'],
             'instructions'   => ['nullable', 'string', 'max:1000'],
         ]);
 

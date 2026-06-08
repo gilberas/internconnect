@@ -22,10 +22,24 @@ class ApplicantController extends Controller
 
         $applications = $internship->applications()
             ->with(['student.user', 'interview'])
+            ->when(request('status'), fn ($q, $s) => $q->where('status', $s))
             ->latest()
-            ->paginate(15);
+            ->paginate(15)
+            ->withQueryString();
 
-        return view('company.applicants.index', compact('internship', 'applications'));
+        $counts = $internship->applications()
+            ->selectRaw('status, count(*) as total')
+            ->groupBy('status')
+            ->pluck('total', 'status');
+
+        $stats = [
+            'total'               => (int) $counts->sum(),
+            'under_review'        => (int) $counts->get('under_review', 0),
+            'shortlisted'         => (int) $counts->get('shortlisted', 0),
+            'interview_scheduled' => (int) $counts->get('interview_scheduled', 0),
+        ];
+
+        return view('company.applicants.index', compact('internship', 'applications', 'stats'));
     }
 
     public function show(Internship $internship, Application $application): View
