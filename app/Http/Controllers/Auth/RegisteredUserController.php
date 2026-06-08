@@ -39,6 +39,13 @@ class RegisteredUserController extends Controller
 
         event(new Registered($user));
 
+        if ($request->account_type === 'company') {
+            $profile = $user->companyProfile;
+            User::where('account_type', 'admin')->each(
+                fn ($admin) => $admin->notify(new \App\Notifications\CompanySubmittedNotification($profile))
+            );
+        }
+
         Auth::login($user);
 
         return redirect()->intended(

@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
 use App\Models\CompanyProfile;
+use App\Notifications\CompanyRejectedNotification;
+use App\Notifications\CompanyVerifiedNotification;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -51,6 +53,7 @@ class CompanyController extends Controller
         ]);
 
         ActivityLog::record('verify_company', auth()->user(), $company);
+        $company->user->notify(new CompanyVerifiedNotification($company));
 
         return back()->with('status', "Company '{$company->company_name}' verified successfully.");
     }
@@ -67,6 +70,7 @@ class CompanyController extends Controller
         ]);
 
         ActivityLog::record('reject_company', auth()->user(), $company);
+        $company->user->notify(new CompanyRejectedNotification($company));
 
         return back()->with('status', "Company rejected. Reason sent to company.");
     }

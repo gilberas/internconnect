@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Company;
 use App\Http\Controllers\Controller;
 use App\Models\Application;
 use App\Models\Internship;
+use App\Notifications\ApplicationStatusChangedNotification;
+use App\Notifications\StudentShortlistedNotification;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -63,6 +65,13 @@ class ApplicantController extends Controller
         ]);
 
         $application->update($data);
+        $application->load(['student.user', 'internship']);
+
+        $application->student->user->notify(new ApplicationStatusChangedNotification($application));
+
+        if ($data['status'] === 'shortlisted') {
+            $application->student->user->notify(new StudentShortlistedNotification($application));
+        }
 
         return back()->with('status', 'Application status updated.');
     }

@@ -5,6 +5,9 @@ namespace App\Http\Controllers\Company;
 use App\Http\Controllers\Controller;
 use App\Models\Internship;
 use App\Models\InternshipCategory;
+use App\Models\User;
+use App\Notifications\InternshipClosedNotification;
+use App\Notifications\InternshipSubmittedNotification;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -69,7 +72,12 @@ class InternshipController extends Controller
         $data['company_id']      = $this->companyProfile()->id;
         $data['status']          = 'pending';
 
-        Internship::create($data);
+        $internship = Internship::create($data);
+        $internship->load('company');
+
+        User::where('account_type', 'admin')->each(
+            fn ($admin) => $admin->notify(new InternshipSubmittedNotification($internship))
+        );
 
         return redirect()->route('company.internships.index')
             ->with('status', 'Internship submitted for review. You will be notified once approved.');
@@ -126,6 +134,10 @@ class InternshipController extends Controller
     {
         abort_if($internship->company_id !== $this->companyProfile()->id, 403);
         $internship->update(['status' => 'closed']);
+
+        $internship->applications()->with('student.user', 'internship.company')->get()->each(
+            fn ($app) => $app->student->user->notify(new InternshipClosedNotification($app))
+        );
 
         return back()->with('status', 'Internship closed.');
     }

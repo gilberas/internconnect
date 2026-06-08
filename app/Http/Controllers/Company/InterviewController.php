@@ -5,6 +5,9 @@ namespace App\Http\Controllers\Company;
 use App\Http\Controllers\Controller;
 use App\Models\Application;
 use App\Models\Interview;
+use App\Notifications\InterviewCancelledNotification;
+use App\Notifications\InterviewRescheduledNotification;
+use App\Notifications\InterviewScheduledNotification;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -28,8 +31,11 @@ class InterviewController extends Controller
             'instructions'   => ['nullable', 'string', 'max:1000'],
         ]);
 
-        Interview::create(['application_id' => $application->id, 'status' => 'scheduled'] + $data);
+        $interview = Interview::create(['application_id' => $application->id, 'status' => 'scheduled'] + $data);
         $application->update(['status' => 'interview_scheduled']);
+        $interview->load(['application.student.user', 'application.internship']);
+
+        $application->student->user->notify(new InterviewScheduledNotification($interview));
 
         return back()->with('status', 'Interview scheduled. Student has been notified.');
     }
@@ -56,6 +62,9 @@ class InterviewController extends Controller
         ];
 
         $interview->update($data + ['status' => 'rescheduled', 'reschedule_history' => $history]);
+        $interview->load(['application.student.user', 'application.internship']);
+
+        $interview->application->student->user->notify(new InterviewRescheduledNotification($interview));
 
         return back()->with('status', 'Interview rescheduled. Student has been notified.');
     }
@@ -63,7 +72,10 @@ class InterviewController extends Controller
     public function cancel(Interview $interview): RedirectResponse
     {
         abort_if($interview->application->internship->company_id !== $this->companyProfile()->id, 403);
+        $interview->load(['application.student.user', 'application.internship']);
         $interview->update(['status' => 'cancelled']);
+
+        $interview->application->student->user->notify(new InterviewCancelledNotification($interview));
 
         return back()->with('status', 'Interview cancelled. Student has been notified.');
     }

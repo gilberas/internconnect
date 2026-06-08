@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
 use App\Models\Internship;
+use App\Notifications\InternshipApprovedNotification;
+use App\Notifications\InternshipRejectedNotification;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -52,6 +54,7 @@ class InternshipController extends Controller
         ]);
 
         ActivityLog::record('approve_internship', auth()->user(), $internship);
+        $internship->company->user->notify(new InternshipApprovedNotification($internship));
 
         return back()->with('status', "Internship '{$internship->title}' approved and published.");
     }
@@ -68,6 +71,7 @@ class InternshipController extends Controller
         ]);
 
         ActivityLog::record('reject_internship', auth()->user(), $internship);
+        $internship->company->user->notify(new InternshipRejectedNotification($internship));
 
         return back()->with('status', 'Internship rejected. Company notified.');
     }

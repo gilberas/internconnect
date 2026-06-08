@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\ActivityLog;
 use App\Models\User;
+use App\Notifications\AccountSuspendedNotification;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -62,6 +63,7 @@ class UserController extends Controller
         }
 
         ActivityLog::record('suspend_user', auth()->user(), $user);
+        $user->notify(new AccountSuspendedNotification($user));
 
         return back()->with('status', "User '{$user->name}' suspended.");
     }

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Application;
 use App\Models\ApplicationCertificate;
 use App\Models\Internship;
+use App\Notifications\NewApplicationNotification;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -78,6 +79,15 @@ class ApplicationController extends Controller
                 }
             }
         });
+
+        $application = Application::with(['student.user', 'internship'])
+            ->where('internship_id', $internship->id)
+            ->where('student_id', $profile->id)
+            ->latest()
+            ->first();
+
+        $internship->loadMissing('company.user');
+        $internship->company->user->notify(new NewApplicationNotification($application));
 
         return redirect()->route('student.applications.index')
             ->with('status', 'Application submitted! You will be notified of updates.');
