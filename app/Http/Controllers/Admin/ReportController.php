@@ -26,7 +26,7 @@ class ReportController extends Controller
                 ->whereMonth('created_at', now()->month)->count(),
             'by_month'   => User::where('account_type', 'student')
                 ->whereBetween('created_at', [$from, $to])
-                ->selectRaw('DATE_FORMAT(created_at,"%b %Y") as month, COUNT(*) as count')
+                ->selectRaw("TO_CHAR(created_at, 'Mon YYYY') as month, COUNT(*) as count")
                 ->groupBy('month', 'created_at')
                 ->orderBy('created_at')
                 ->get(),
@@ -54,7 +54,7 @@ class ReportController extends Controller
             'accepted'  => Application::where('status', 'accepted')->count(),
             'rejected'  => Application::where('status', 'rejected')->count(),
             'by_month'  => Application::whereBetween('created_at', [$from, $to])
-                ->selectRaw('DATE_FORMAT(created_at,"%b %Y") as month, COUNT(*) as count')
+                ->selectRaw("TO_CHAR(created_at, 'Mon YYYY') as month, COUNT(*) as count")
                 ->groupBy('month', 'created_at')
                 ->orderBy('created_at')
                 ->get(),
