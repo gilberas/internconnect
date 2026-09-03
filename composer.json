@@ -11,6 +11,7 @@
         "laravel/breeze": "^2.4",
         "laravel/framework": "^13.8",
         "laravel/tinker": "^3.0",
+        "resend/resend-laravel": "*",
         "spatie/laravel-permission": "^8.0",
         "spatie/simple-excel": "^3.9"
     },
@@ -25,6 +26,9 @@
         "pestphp/pest-plugin-laravel": "^4.1"
     },
     "autoload": {
+        "classmap": [
+            "vendor/resend/resend-php/src/Resend.php"
+        ],
         "psr-4": {
             "App\\": "app/",
             "Database\\Factories\\": "database/factories/",

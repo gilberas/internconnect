@@ -1,18 +1,18 @@
 <x-guest-layout>
     <form method="POST" action="{{ route('register') }}"
-          x-data="{ type: '{{ old('account_type', request('type', 'student')) }}' }">
+          x-data="{ type: '{{ old('account_type', request('type', 'student')) }}', showPassword: false, showConfirm: false }">
         @csrf
 
         {{-- Account Type Toggle --}}
         <div class="mb-6">
-            <p class="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">I want to:</p>
+            <p class="text-sm font-medium text-slate-300 mb-3">I want to:</p>
             <div class="grid grid-cols-2 gap-3">
                 {{-- Student --}}
                 <button type="button"
                         @click="type = 'student'"
                         :class="type === 'student'
-                            ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 ring-2 ring-blue-500'
-                            : 'border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-400'"
+                            ? 'border-blue-500 bg-blue-500/10 text-blue-300 ring-2 ring-blue-500'
+                            : 'border-slate-500/30 text-slate-400 hover:border-slate-400'"
                         class="flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all cursor-pointer">
                     <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
@@ -26,8 +26,8 @@
                 <button type="button"
                         @click="type = 'company'"
                         :class="type === 'company'
-                            ? 'border-blue-600 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 ring-2 ring-blue-500'
-                            : 'border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-400 hover:border-gray-400'"
+                            ? 'border-blue-500 bg-blue-500/10 text-blue-300 ring-2 ring-blue-500'
+                            : 'border-slate-500/30 text-slate-400 hover:border-slate-400'"
                         class="flex flex-col items-center gap-2 p-4 rounded-xl border-2 transition-all cursor-pointer">
                     <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
@@ -38,12 +38,12 @@
                 </button>
             </div>
 
-            {{-- Hidden input synced with Alpine — MUST be inside <form> --}}
+            {{-- Hidden input synced with Alpine --}}
             <input type="hidden" name="account_type" :value="type">
 
-            {{-- Fallback for no-JS environments --}}
+            {{-- Fallback for no-JS --}}
             <noscript>
-                <select name="account_type" class="w-full mt-3 rounded-xl border-gray-300 dark:border-gray-700 dark:bg-gray-800 text-sm">
+                <select name="account_type" class="w-full mt-3 rounded-xl auth-input">
                     <option value="student" {{ old('account_type', 'student') === 'student' ? 'selected' : '' }}>Student — Find Internships</option>
                     <option value="company" {{ old('account_type') === 'company' ? 'selected' : '' }}>Organisation — Post Internships</option>
                 </select>
@@ -54,8 +54,8 @@
 
         {{-- Name --}}
         <div>
-            <x-input-label for="name" :value="__('Full Name')"/>
-            <x-text-input id="name" class="block mt-1 w-full" type="text"
+            <x-input-label for="name" :value="__('Full Name')" class="text-slate-300!" />
+            <x-text-input id="name" class="block mt-1.5 w-full auth-input" type="text"
                           name="name" :value="old('name')" required autofocus autocomplete="name"
                           placeholder="John Mwangi"/>
             <x-input-error :messages="$errors->get('name')" class="mt-2"/>
@@ -63,8 +63,8 @@
 
         {{-- Email --}}
         <div class="mt-4">
-            <x-input-label for="email" :value="__('Email Address')"/>
-            <x-text-input id="email" class="block mt-1 w-full" type="email"
+            <x-input-label for="email" :value="__('Email Address')" class="text-slate-300!" />
+            <x-text-input id="email" class="block mt-1.5 w-full auth-input" type="email"
                           name="email" :value="old('email')" required autocomplete="username"
                           placeholder="you@example.com"/>
             <x-input-error :messages="$errors->get('email')" class="mt-2"/>
@@ -72,11 +72,31 @@
 
         {{-- Password --}}
         <div class="mt-4">
-            <x-input-label for="password" :value="__('Password')"/>
-            <x-text-input id="password" class="block mt-1 w-full" type="password"
-                          name="password" required autocomplete="new-password"
-                          placeholder="Min. 8 characters"/>
-            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            <x-input-label for="password" :value="__('Password')" class="text-slate-300!" />
+            <div class="relative mt-1.5" x-data="{ show: false }">
+                <input id="password"
+                       :type="show ? 'text' : 'password'"
+                       name="password" required autocomplete="new-password"
+                       placeholder="Min. 8 characters"
+                       class="block w-full auth-input pr-11">
+                <button type="button"
+                        @click="show = !show"
+                        class="absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-400 hover:text-slate-300 transition-colors"
+                        :aria-label="show ? 'Hide password' : 'Show password'"
+                        aria-label="Show password">
+                    <svg x-show="!show" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75"
+                              d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                    <svg x-show="show" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75"
+                              d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                        <line x1="1" y1="1" x2="23" y2="23"/>
+                    </svg>
+                </button>
+            </div>
+            <p class="mt-1.5 text-xs text-slate-500">
                 Must include uppercase, lowercase, number, and special character.
             </p>
             <x-input-error :messages="$errors->get('password')" class="mt-2"/>
@@ -84,20 +104,46 @@
 
         {{-- Confirm Password --}}
         <div class="mt-4">
-            <x-input-label for="password_confirmation" :value="__('Confirm Password')"/>
-            <x-text-input id="password_confirmation" class="block mt-1 w-full" type="password"
-                          name="password_confirmation" required autocomplete="new-password"/>
+            <x-input-label for="password_confirmation" :value="__('Confirm Password')" class="text-slate-300!" />
+            <div class="relative mt-1.5" x-data="{ show: false }">
+                <input id="password_confirmation"
+                       :type="show ? 'text' : 'password'"
+                       name="password_confirmation" required autocomplete="new-password"
+                       placeholder="Re-enter your password"
+                       class="block w-full auth-input pr-11">
+                <button type="button"
+                        @click="show = !show"
+                        class="absolute inset-y-0 right-0 flex items-center pr-3.5 text-slate-400 hover:text-slate-300 transition-colors"
+                        :aria-label="show ? 'Hide password' : 'Show password'"
+                        aria-label="Show password">
+                    <svg x-show="!show" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75"
+                              d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                        <circle cx="12" cy="12" r="3"/>
+                    </svg>
+                    <svg x-show="show" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.75"
+                              d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+                        <line x1="1" y1="1" x2="23" y2="23"/>
+                    </svg>
+                </button>
+            </div>
             <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2"/>
         </div>
 
         <div class="flex items-center justify-between mt-6">
-            <a class="text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 underline underline-offset-4 transition-colors"
+            <a class="text-sm text-slate-400 hover:text-blue-300 underline underline-offset-4 transition-colors"
                href="{{ route('login') }}">
                 Already have an account?
             </a>
-            <x-primary-button>
+            <button type="submit"
+                    class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-white transition-all duration-200"
+                    style="background:linear-gradient(135deg,#2563EB,#1D4ED8);box-shadow:0 4px 20px rgba(37,99,235,0.4),inset 0 1px 0 rgba(255,255,255,0.15);">
                 {{ __('Create Account') }}
-            </x-primary-button>
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+                </svg>
+            </button>
         </div>
     </form>
 </x-guest-layout>
